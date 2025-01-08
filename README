@@ -1,0 +1,94 @@
+
+USE CASES
+1. Unit Tests
+Purpose: Test the core components (Message, Table, ValueStack) and serialization functions (encode and decode).
+Command:
+bash
+Copy code
+make unit_tests
+./unit_tests
+Outcome: Validates that your implementation is ready for client and server development.
+2. Client Programs
+get_value Client
+Purpose: Retrieves a value associated with a specific key.
+Usage:
+bash
+Copy code
+./get_value hostname port username table key
+Example:
+bash
+Copy code
+./get_value localhost 5000 alice fruit apples
+Outputs: 42
+set_value Client
+Purpose: Sets the value of a key in a table.
+Usage:
+bash
+Copy code
+./set_value hostname port username table key value
+Example:
+bash
+Copy code
+./set_value localhost 5000 alice fruit apples 67
+No output if successful.
+incr_value Client
+Purpose: Increments the integer value of a key by 1, optionally within a transaction.
+Usage:
+bash
+Copy code
+./incr_value [-t] hostname port username table key
+Example:
+bash
+Copy code
+./incr_value localhost 5000 alice fruit apples
+./incr_value -t localhost 5000 alice fruit apples
+No output if successful.
+3. Server
+Purpose: Listens for client requests and handles table operations (e.g., GET, SET, increment, etc.).
+Usage:
+bash
+Copy code
+./server port
+Example:
+bash
+Copy code
+./server 5000
+Server Features
+Autocommit Mode: Each operation is atomic.
+Transaction Mode: Groups operations (e.g., GET → PUSH → ADD → SET) for atomic execution.
+Concurrency Control:
+Uses pthread_mutex_lock and pthread_mutex_trylock for synchronization.
+Transactions roll back if locks fail or errors occur.
+4. Testing
+Manual Testing
+With netcat: Simulate server responses or interact directly with the server.
+Example:
+bash
+Copy code
+nc -l 5000
+./get_value localhost 5000 alice fruit apples
+Automated Testing
+Clients:
+bash
+Copy code
+./supervise ./incr_value_concurrent.sh PORT
+./supervise ./incr_value_concurrent.sh -t PORT
+Server:
+bash
+Copy code
+./supervise ./scripts/server_get_set_multi_interleaved.sh PORT
+./supervise ./scripts/server_concurrency_increment_notrans.sh PORT
+./supervise ./scripts/server_concurrency_increment_trans.sh PORT
+./supervise ./scripts/server_concurrency_trans_multiple_tables.sh PORT
+5. Error Handling
+Clients:
+Print error messages to stderr if communication or operations fail.
+Server:
+Sends ERROR responses for invalid messages or failed operations.
+Handles exceptions (InvalidMessage, CommException, OperationException, FailedTransaction) with proper cleanup.
+6. Synchronization Strategy
+Key Mechanisms:
+Mutexes for table access.
+Transactions use pthread_mutex_trylock to avoid deadlocks.
+Error Recovery:
+Transactions that fail release all locks and roll back changes.
